@@ -10,8 +10,8 @@ connection()
 app.use((err,req,res,next)=>{
     console.log(err)
     let stack=env.mood==="dev" ? err.stack: null
-    console.log(stack,"error stack")
-    res.status(err.cause.status || 500).json({message:err.message ,stack:stack})
+   const status=err.cause?err.cause.status : 500
+    res.status(status).json({message:err.message ,stack:stack})
 })
 
 
