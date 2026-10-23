@@ -5,24 +5,30 @@ import jwt from "jsonwebtoken"
 import { generate_token, new_generate_access_token } from "../../common/services/token.service.js"
 import bcrypt from "bcrypt"
 import { send_email } from "../../common/middleware/sendEmail.js"
+import { set } from "../../connection/redis/redis.service.js"
+import { get } from "../../connection/redis/redis.service.js"
 
 
 
-
-
-export const signup = async (body) => {
+export const signup = async (body, file) => {
     let { name, email, password, confirm_password, phone, age, gender } = body
+    let profile_image
     if (password != confirm_password) {
         return bad_request_exception({ message: "Passwords do not match" })
+    }
+    if (file) {
+        profile_image = file.path
     }
     let existing_user = await user_model.findOne({ email })
     if (existing_user) {
         return bad_request_exception({ message: "User already exists" })
     } else {
         let hashed_password = await bcrypt.hash(password, 10)
-        let otp = Math.round(Math.random() * 1000000)
         if (hashed_password) {
-            let user = await user_model.create({ name, email, password: hashed_password, phone, age, gender, otp })
+            let otp = Math.round(Math.random() * 1000000)
+            let user = await user_model.create({ name, email, password: hashed_password, phone, age, gender, profile_image: profile_image })
+            set(`otp::${user._id}`, otp, 120)
+            console.log(`otp::${user._id}`)
             await send_email({ to: email, subject: "signup", html: `<h1> your otp is ${otp}</h1> ` })
             return user
         }
@@ -36,8 +42,8 @@ export const login = async (body) => {
     if (!user) {
         return not_found_exception({ message: "User not found" });
     }
-    if(!user.is_verified){
-        return bad_request_exception({message:"user not verified"})
+    if (!user.is_verified) {
+        return bad_request_exception({ message: "user not verified" })
     }
 
     let isMatch = await bcrypt.compare(password, user.password);
@@ -46,7 +52,7 @@ export const login = async (body) => {
     }
 
     const { access_token, refresh_token } = generate_token(user);
-    return { message:"login succsess", access_token, refresh_token };
+    return { message: "login succsess", access_token, refresh_token };
 }
 
 
@@ -76,28 +82,25 @@ export const verify_otp = async (body) => {
     if (!user) {
         return not_found_exception({ message: "User not found" })
     }
-    if (user.otp == otp) {
-        user.is_verified = true
-        await user.save()
-        return { message: "OTP verified successfully" }
-
-    }
     if (user.is_verified) {
         return bad_request_exception({ message: "User already verified" })
     }
-    if(user.otp != otp){
-        return bad_request_exception({ message: "Invalid OTP" })
+    let redis_otp = await get(`otp::${user._id}`)
+    console.log("Redis OTP:", redis_otp, "(Type:", typeof redis_otp, ")");
+    console.log("Submitted OTP:", otp, "(Type:", typeof otp, ")");
+    if (!redis_otp || String(redis_otp) !== String(otp)) {
+        return bad_request_exception({ message: "Invalid or expired OTP" })
     }
     user.is_verified = true
-    user.otp = null
     await user.save()
-    return { message: "OTP verified successfully" , user}
+
+    return { message: "OTP verified successfully" }
 }
 
 
 
-export const get_all_users =async ()=>{
-    let user= await user_model()
+export const get_all_users = async () => {
+    let user = await user_model()
     return user
 
 }

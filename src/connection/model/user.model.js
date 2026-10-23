@@ -44,7 +44,7 @@ const user_schema = mongoose.Schema({
         default : provider_enum.system
     },
     profile_image :{
-        type : String,
+        type : [String],
     },
     cover_image :{
         type : [String]
@@ -56,9 +56,7 @@ const user_schema = mongoose.Schema({
         type : Boolean,
         default : false
     },
-    otp :{
-        type : String
-    },
+    
 },{
     timestamps : true
 })
