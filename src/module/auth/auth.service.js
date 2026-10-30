@@ -1,4 +1,4 @@
-import { bad_request_exception, not_found_exception } from "../../common/exception/error.exception.js"
+import { bad_request_exception, conflict_exception, not_found_exception } from "../../common/exception/error.exception.js"
 import { env } from "../../config/env.service.js"
 import { user_model } from "../../connection/model/user.model.js"
 import jwt from "jsonwebtoken"
@@ -11,7 +11,7 @@ import { get } from "../../connection/redis/redis.service.js"
 
 
 export const signup = async (body, file) => {
-    let { name, email, password, confirm_password, phone, age, gender } = body
+    let { name, email, password, confirm_password, phone, age, gender, unique_name } = body
     let profile_image
     if (password != confirm_password) {
         return bad_request_exception({ message: "Passwords do not match" })
@@ -23,10 +23,14 @@ export const signup = async (body, file) => {
     if (existing_user) {
         return bad_request_exception({ message: "User already exists" })
     } else {
+        let user_data = await user_model.findOne({unique_name})
+        if(user_data){
+            return conflict_exception({message:"unique name already exsists"})
+        }
         let hashed_password = await bcrypt.hash(password, 10)
         if (hashed_password) {
             let otp = Math.round(Math.random() * 1000000)
-            let user = await user_model.create({ name, email, password: hashed_password, phone, age, gender, profile_image: profile_image })
+            let user = await user_model.create({ name, email, password: hashed_password, phone, age, gender, profile_image: profile_image,unique_name })
             set(`otp::${user._id}`, otp, 120)
             console.log(`otp::${user._id}`)
             await send_email({ to: email, subject: "signup", html: `<h1> your otp is ${otp}</h1> ` })

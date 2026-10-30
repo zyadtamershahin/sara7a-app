@@ -4,6 +4,9 @@ import { bad_request_exception } from "../exception/error.exception.js"
 
 
 export const auth = (req, res, next) => {
+    if(!req.headers.authorization){
+        throw bad_request_exception({message:"token not found"})
+    }
     let [flag, token] = req.headers.authorization.split(" ")
     switch (flag) {
         case "basic":

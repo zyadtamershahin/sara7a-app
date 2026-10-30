@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { gender_enum, provider_enum, role_enum } from "../../common/index.js"
+import { string } from "zod";
 
 
 
@@ -55,6 +56,11 @@ const user_schema = mongoose.Schema({
     is_verified :{
         type : Boolean,
         default : false
+    },
+    unique_name:{
+        type : String,
+        require : true,
+        unique : true
     },
     
 },{
