@@ -13,21 +13,27 @@ export const get_all_messages = async () => {
 }
 
 
-export const send_message = async (body, file) => {
-    let { content, reciverID } = body
-    let image
-    let exsisted_user = await user_model.findById(reciverID)
+export const send_message = async (body, file, user) => {
+    let { content, reciverID } = body;
+    let image;
+
+    let exsisted_user = await user_model.findById(reciverID);
     if (!exsisted_user) {
-        throw bad_request_exception({ message: "user not found" })
+        throw bad_request_exception({ message: "user not found" });
     }
+
     if (file) {
-        image = file.path
+        image = file.path;
     }
-    let added_message = await message_model.insertOne({ content, reciverID, image })
-    if (!added_message) {
-        throw bad_request_exception({ message: "message not sent" })
-    }
-    return { message: "message added succsesfuly", added_message }
+
+    let added_message = await message_model.create({
+        content,
+        reciverID,
+        senderID: user ? user.id : null,
+        image
+    });
+
+    return { message: "message added succsesfuly", added_message };
 }
 
 

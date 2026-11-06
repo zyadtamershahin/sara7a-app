@@ -6,8 +6,8 @@ import message_router from "./module/message/message.controller.js"
 import {fileURLToPath} from 'url'
 import path from "path"
 import { redis_connection } from "./connection/redis/redis.js"
-
-
+import request_router from "./module/request/request.controller.js"
+import chat_router from "./module/chat/chat.controller.js"
 const __filename=fileURLToPath(import.meta.url)
 const __dirname =path.dirname(__filename)
 const upload_path = path.resolve(__dirname,'../uploads')
@@ -15,6 +15,8 @@ const app=express()
 app.use(express.json())
 app.use("/users", user_router)
 app.use("/messages",message_router)
+app.use("/requests",request_router)
+app.use("/conversations", chat_router);
 app.use("/uploads",express.static(upload_path))
 export const client=await redis_connection()
 connection()

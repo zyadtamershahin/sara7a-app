@@ -14,6 +14,12 @@ const message_schema = mongoose.Schema({
         required: true,
         ref: "user"
     },
+    senderID: {
+        type: Types.ObjectId,
+        required: false,
+        ref: "user",
+        select: false 
+    },
     image: {
         type: String,
         required: false

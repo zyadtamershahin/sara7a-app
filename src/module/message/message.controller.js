@@ -15,8 +15,8 @@ router.get("/get-all-messages",auth ,check_role(['1']), async(req,res)=>{
     succses_response({res,data})
 })
 
-router.post("/create-message",upload().single('image'),async(req,res)=>{
-    let data = await send_message(req.body,req.file)
+router.post("/create-message",auth,upload().single('image'),async(req,res)=>{
+    let data = await send_message(req.body,req.file,req.user)
     succses_response({res,message:"message sent",status:201,data})
 })
 
